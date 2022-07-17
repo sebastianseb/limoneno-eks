@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  db: 
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: lemontech
+      MYSQL_DATABASE: limoneno
+      MYSQL_USER: root
+      MYSQL_PASSWORD: lemontech
+    ports:
+      - "3307:3306"
+
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+#    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - cache:/data
+
+  app:
+    container_name: app
+  #  build:
+  #    context: ../backend
+    image: app
+    restart: always
+    ports:
+      - 5000:5000
+    depends_on:
+      - cache
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USERNAME: root 
+      DATABASE_PASSWORD: lemontech 
+      DATABASE_NAME: limoneno
+      DATABASE_PORT: 3306
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+        labels: "app_production_status"
+        env: "os"
+    links:
+      - db
+      - cache
+  front:
+    container_name: front
+  #  build:
+  #    context: ../backend
+    image: front
+    restart: always
+    ports:
+      - 80:80
+    depends_on:
+      - cache
+      - db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+        labels: "app_production_status"
+        env: "os"
+    links:
+      - db
+      - cache
+      - app
+
+volumes:
+  cache:
+
